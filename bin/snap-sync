@@ -112,6 +112,7 @@ Options:
  -r, --remote <address>   ip address of a remote machine to backup to
  -s, --subvolid <subvlid> subvolume id of the mounted BTRFS subvolume to back up to
  -u, --UUID <UUID>        UUID of the mounted BTRFS subvolume to back up to
+ -b, --backupdir <path>   Backup dir on target BTRFS subvolume
 
 See 'man snap-sync' for more details.
 EOF
@@ -136,6 +137,10 @@ while [[ $# -gt 0 ]]; do
         ;;
         -s|--subvolid)
             subvolid_cmdline="$2"
+            shift 2
+        ;;
+        -b|--backupdir)
+            backupdir_cmdline="$2"
             shift 2
         ;;
         -n|--noconfirm)
@@ -166,6 +171,7 @@ done
 description=${description:-"latest incremental backup"}
 uuid_cmdline=${uuid_cmdline:-"none"}
 subvolid_cmdline=${subvolid_cmdline:-"5"}
+backupdir_cmdline=${backupdir_cmdline:-"none"}
 noconfirm=${noconfirm:-"no"}
 
 if [[ "$uuid_cmdline" != "none" ]]; then
@@ -330,18 +336,23 @@ for x in $selected_configs; do
 
     old_num=$(snapper -c "$x" list -t single | awk '/'"subvolid=$selected_subvolid, uuid=$selected_uuid"'/ {print $1}')
     old_snap=$SUBVOLUME/.snapshots/$old_num/snapshot
+    mybackupdir="$backupdir_cmdline"
 
     OLD_NUM_ARRAY[$i]=$old_num
     OLD_SNAP_ARRAY[$i]=$old_snap
 
     if [[ -z "$old_num" ]]; then
         printf "No backups have been performed for '%s' on this disk.\n" "$x"
-        read -e -r -p "Enter name of subvolume to store backups, relative to $selected_mnt (to be created if not existing): " mybackupdir
+        if [[ $mybackupdir == 'none' ]]; then
+            read -e -r -p "Enter name of subvolume to store backups, relative to $selected_mnt (to be created if not existing): " mybackupdir
+        fi
         printf "This will be the initial backup for snapper configuration '%s' to this disk. This could take awhile.\n" "$x"
         BACKUPDIR="$selected_mnt/$mybackupdir"
         $ssh test -d "$BACKUPDIR" || $ssh btrfs subvolume create "$BACKUPDIR"
     else
-        mybackupdir=$(snapper -c "$x" list -t single | awk -F"|" '/'"subvolid=$selected_subvolid, uuid=$selected_uuid"'/ {print $5}' | awk -F "," '/backupdir/ {print $1}' | awk -F"=" '{print $2}')
+        if [[ $mybackupdir == 'none' ]]; then
+            mybackupdir=$(snapper -c "$x" list -t single | awk -F"|" '/'"subvolid=$selected_subvolid, uuid=$selected_uuid"'/ {print $5}' | awk -F "," '/backupdir/ {print $1}' | awk -F"=" '{print $2}')
+        fi
         BACKUPDIR="$selected_mnt/$mybackupdir"
         $ssh test -d $BACKUPDIR || die "%s is not a directory on %s.\n" "$BACKUPDIR" "$selected_uuid"
     fi
