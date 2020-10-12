@@ -204,7 +204,7 @@ declare -a SUBVOLIDS_ARRAY
 
 i=0
 for x in $TARGETS; do
-    SUBVOLIDS_ARRAY[$i]=$($ssh btrfs subvolume show $x | awk '/Subvolume ID:/ { print $3 }')
+    SUBVOLIDS_ARRAY[$i]=$($ssh btrfs subvolume show $x 2>/dev/null | awk '/Subvolume ID:/ { print $3 }')
     TARGETS_ARRAY[$i]=$x
     i=$((i+1))
 done
