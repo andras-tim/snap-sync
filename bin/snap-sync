@@ -34,7 +34,7 @@ printf "snap-sync comes with ABSOLUTELY NO WARRANTY. This is free software, and 
 
 # The following line is modified by the Makefile or
 # find_snapper_config script
-SNAPPER_CONFIG=/etc/conf.d/snapper
+SNAPPER_CONFIG=/etc/default/snapper
 
 TMPDIR=$(mktemp -d)
 PIPE=$TMPDIR/$name.out
