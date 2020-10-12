@@ -440,7 +440,7 @@ for x in $selected_configs; do
 
     if [[ -z "$old_num" ]]; then
         printf "Sending first snapshot for '%s' configuration...\n" "$x" | tee $PIPE
-        btrfs send "$new_snap" | $ssh btrfs receive "$backup_location" &>/dev/null
+        btrfs send "$new_snap" | pv | $ssh btrfs receive "$backup_location"
 
     else
 
@@ -450,7 +450,7 @@ for x in $selected_configs; do
         # is an identical subvolume to the old snapshot at the receiving
         # location where it can get its data. This helps speed up the transfer.
 
-        btrfs send -c "$old_snap" "$new_snap" | $ssh btrfs receive "$backup_location"
+        btrfs send -c "$old_snap" "$new_snap" | pv | $ssh btrfs receive "$backup_location"
         printf "Modifying data for old local snapshot for '%s' configuration...\n" "$x" | tee $PIPE
         snapper -v -c "$x" modify -d "old snap-sync snapshot (you may remove)" -u "backupdir=,subvolid=,uuid=" -c "number" "$old_num"
     fi
@@ -459,9 +459,9 @@ for x in $selected_configs; do
         cp "$new_info" "$backup_location"
     else
         if [[ -z $port ]]; then
-            rsync -avzzq "$new_info" "$remote":"$backup_location"
+            rsync --info=progress2 -avzzq "$new_info" "$remote":"$backup_location"
         else
-            rsync -avzzqe "ssh -p $port" "$new_info" "$remote":"$backup_location"
+            rsync --info=progress2 -avzzqe "ssh -p $port" "$new_info" "$remote":"$backup_location"
         fi
     fi
 
