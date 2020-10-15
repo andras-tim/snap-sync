@@ -302,9 +302,7 @@ for x in $selected_configs; do
 
     if [[ "$(snapper -c $x list -t single | awk '/'$name' backup in progress/ {cnt++} END {print cnt}')" -gt 0 ]]; then
         printf "\nNOTE: Previous failed %s backup snapshots found for '%s'.\n" "$name" "$x" | tee $PIPE
-        if [[ $noconfirm == "yes" ]]; then
-            printf "'noconfirm' option passed. Failed backups will not be deleted.\n" | tee $PIPE
-        else
+        if [[ $noconfirm == "no" ]]; then
             read -e -r -p "Delete failed backup snapshot(s)? (These local snapshots from failed backups are not used.) [y/N]? " delete_failed
             while [[ -n "$delete_failed" && "$delete_failed" != [Yy]"es" &&
                 "$delete_failed" != [Yy] && "$delete_failed" != [Nn]"o" &&
@@ -316,9 +314,10 @@ for x in $selected_configs; do
                     printf "Select 'y' or 'N'.\n"
                 fi
             done
-            if [[ "$delete_failed" == [Yy]"es" || "$delete_failed" == [Yy] ]]; then
-                snapper -c $x delete $(snapper -c $x list | awk '/'$name' backup in progress/ {print $1}')
-            fi
+        fi
+        if [[ $noconfirm == "yes" || "$delete_failed" == [Yy]"es" || "$delete_failed" == [Yy] ]]; then
+            printf "Deleting failed backups\n" | tee $PIPE
+            snapper -c $x delete $(snapper -c $x list | awk '/'$name' backup in progress/ {print $1}')
         fi
     fi
 
