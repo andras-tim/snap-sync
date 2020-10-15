@@ -36,17 +36,19 @@ printf "snap-sync comes with ABSOLUTELY NO WARRANTY. This is free software, and 
 # find_snapper_config script
 SNAPPER_CONFIG=/etc/default/snapper
 
-TMPDIR=$(mktemp -d)
-PIPE=$TMPDIR/$name.out
-mkfifo $PIPE
-systemd-cat -t "$name" < $PIPE &
+PIPE='/dev/null'
+#TMPDIR=$(mktemp -d)
+#PIPE=$TMPDIR/$name.out
+#mkfifo $PIPE
+#systemd-cat -t "$name" < $PIPE &
 exec 3>$PIPE
 
-donotify=0
-which notify-send &> /dev/null
-if [[ $? -ne 0 ]]; then
-    donotify=1
-fi
+donotify=1
+#donotify=0
+#which notify-send &> /dev/null
+#if [[ $? -ne 0 ]]; then
+#    donotify=1
+#fi
 
 notify() {
     for u in $(users | tr ' ' '\n' | sort -u); do
